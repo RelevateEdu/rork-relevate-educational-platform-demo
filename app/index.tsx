@@ -1,10 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, Image } from 'react-native';
 import { Header } from '@/components/Header';
 import { ProductCard } from '@/components/ProductCard';
 import { useThemeContext } from '@/contexts/ThemeContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { router, usePathname } from 'expo-router';
 
 
 const { width } = Dimensions.get('window');
@@ -12,14 +10,6 @@ const isWeb = width > 768;
 
 export default function HomeScreen() {
   const { colors } = useThemeContext();
-  const { user, isLoading } = useAuth();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (!isLoading && !user && pathname === '/') {
-      router.replace('/login');
-    }
-  }, [isLoading, user, pathname]);
 
   const products = [
     {
