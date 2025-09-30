@@ -203,18 +203,8 @@ export default function LoginScreen() {
     try {
       await login(email, password, selectedRole);
       
-      // Navigate to appropriate dashboard
-      switch (selectedRole) {
-        case 'student':
-          router.replace('/dashboard/student');
-          break;
-        case 'teacher':
-          router.replace('/dashboard/teacher');
-          break;
-        case 'business':
-          router.replace('/dashboard/business');
-          break;
-      }
+      // Navigate to authenticated area with bottom nav
+      router.replace('/(auth)/home');
     } catch {
       setAuthError('Could not sign in. Please check your details.');
     } finally {

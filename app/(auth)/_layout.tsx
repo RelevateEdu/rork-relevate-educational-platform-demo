@@ -1,55 +1,25 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Tabs, usePathname, router } from 'expo-router';
-import { useThemeContext } from '@/contexts/ThemeContext';
+import React, { useEffect } from 'react';
+import { Tabs, Redirect } from 'expo-router';
 import BottomNav from '@/components/BottomNav';
-import { scrollToTop } from '@/utils/scrollToTop';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function AuthTabsLayout() {
-  const { colors } = useThemeContext();
-  const pathname = usePathname();
-  const activeKey = useMemo<"home" | "progress" | "profile">(() => {
-    if (pathname?.includes('/(auth)/progress')) return 'progress';
-    if (pathname?.includes('/(auth)/profile')) return 'profile';
-    return 'home';
-  }, [pathname]);
+export default function AuthLayout() {
+  const { user, isLoading } = useAuth();
 
-  const [lastActive, setLastActive] = useState<typeof activeKey>(activeKey);
   useEffect(() => {
-    setLastActive(activeKey);
-  }, [activeKey]);
+    console.log('[AuthLayout] user changed', user?.email);
+  }, [user]);
+
+  if (isLoading) return null;
+  if (!user) return <Redirect href="/login" />;
 
   return (
     <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: { display: 'none' },
-        sceneStyle: { backgroundColor: colors.background },
-      }}
-      tabBar={() => (
-        <BottomNav
-          active={activeKey}
-          onChange={(key: 'home' | 'progress' | 'profile') => {
-            if (key === activeKey) {
-              scrollToTop(key);
-              return;
-            }
-            switch (key) {
-              case 'home':
-                router.replace('/(auth)/home');
-                break;
-              case 'progress':
-                router.replace('/(auth)/progress');
-                break;
-              case 'profile':
-                router.replace('/(auth)/profile');
-                break;
-            }
-          }}
-        />
-      )}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <BottomNav {...props} />}
     >
       <Tabs.Screen name="home" options={{ title: 'Home' }} />
-      <Tabs.Screen name="progress" options={{ title: 'Progress' }} />
+      <Tabs.Screen name="progress" options={{ title: 'Progress', tabBarBadge: 0 }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );

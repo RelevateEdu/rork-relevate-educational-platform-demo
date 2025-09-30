@@ -1,29 +1,43 @@
 import React, { useEffect, useRef } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useThemeContext } from '@/contexts/ThemeContext';
-import { registerScrollHandler, unregisterScrollHandler } from '@/utils/scrollToTop';
+import { onScrollToTop } from '@/utils/scrollEvents';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { bottomNavHeight } from '@/components/BottomNav';
 
-export default function ProgressScreen() {
+export default function Progress() {
   const { colors } = useThemeContext();
   const insets = useSafeAreaInsets();
-  const ref = useRef<ScrollView | null>(null);
+  const scrollRef = useRef<ScrollView | null>(null);
 
   useEffect(() => {
-    registerScrollHandler('progress', { scrollToTop: () => ref.current?.scrollTo({ y: 0, animated: true }) });
-    return () => unregisterScrollHandler('progress');
+    const off = onScrollToTop((e) => {
+      if (e.routeName === 'progress') {
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+      }
+    });
+    return off;
   }, []);
 
   return (
-    <ScrollView ref={ref} contentContainerStyle={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 72 }]} testID="progress-scroll">
-      <Text style={[styles.title, { color: colors.text }]}>Progress</Text>
-      <Text style={[styles.paragraph, { color: colors.textSecondary }]}>Your learning progress and stats.</Text>
+    <ScrollView
+      ref={scrollRef}
+      contentContainerStyle={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+          paddingTop: insets.top + 12,
+          paddingBottom: bottomNavHeight + Math.max(insets.bottom, 12),
+        },
+      ]}
+    > 
+      <Text style={[styles.title, { color: colors.text }]} testID="progress-title">Progress</Text>
+      <View style={{ height: 800 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 16 },
-  title: { fontSize: 24, fontWeight: '700' as const, marginBottom: 8 },
-  paragraph: { fontSize: 16, lineHeight: 22 },
+  container: { flexGrow: 1, paddingHorizontal: 16 },
+  title: { fontSize: 24, fontWeight: '700' as const },
 });
