@@ -22,10 +22,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.relevate-educational-platform-demo",
-      "permissions": [
-        "android.permission.VIBRATE"
-      ]
+      "package": "app.rork.relevate-educational-platform-demo"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
