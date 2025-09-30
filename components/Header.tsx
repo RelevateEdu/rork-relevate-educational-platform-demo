@@ -1,0 +1,212 @@
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Pressable } from 'react-native';
+import { router } from 'expo-router';
+import { Moon, Sun, User, ChevronDown } from 'lucide-react-native';
+import { useThemeContext } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+interface HeaderProps {
+  showAuth?: boolean;
+}
+
+export function Header({ showAuth = true }: HeaderProps) {
+  const { colors, theme, toggleTheme } = useThemeContext();
+  const { user, logout } = useAuth();
+  const insets = useSafeAreaInsets();
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const handleAuthPress = () => {
+    if (user) {
+      logout();
+    } else {
+      router.push('/login');
+    }
+  };
+
+  const handleDropdownPress = (route: string) => {
+    if (!route.trim() || route.length > 100) return;
+    setShowDropdown(false);
+    router.push(route.trim());
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <TouchableOpacity style={styles.logoContainer} onPress={() => router.push('/')}>
+        <Image 
+          source={{ uri: 'https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/lnjb9kjp1asayud121gje' }}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
+
+      </TouchableOpacity>
+      
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={[styles.themeButton, { backgroundColor: colors.surface }]}
+          onPress={toggleTheme}
+        >
+          {theme === 'light' ? (
+            <Moon size={20} color={colors.text} />
+          ) : (
+            <Sun size={20} color={colors.text} />
+          )}
+        </TouchableOpacity>
+        
+        <View style={styles.dropdownContainer}>
+          <TouchableOpacity
+            style={[styles.dropdownButton, { backgroundColor: colors.surface }]}
+            onPress={() => setShowDropdown(!showDropdown)}
+          >
+            <Text style={[styles.dropdownText, { color: colors.text }]}>About</Text>
+            <ChevronDown size={16} color={colors.text} />
+          </TouchableOpacity>
+          
+          {showDropdown && (
+            <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() => handleDropdownPress('/about')}
+              >
+                <Text style={[styles.dropdownItemText, { color: colors.text }]}>About us</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() => handleDropdownPress('/changelog')}
+              >
+                <Text style={[styles.dropdownItemText, { color: colors.text }]}>News</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() => handleDropdownPress('/waitlist')}
+              >
+                <Text style={[styles.dropdownItemText, { color: colors.text }]}>Refer us</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+        
+        {showAuth && (
+          <TouchableOpacity
+            style={[styles.authButton, { backgroundColor: user ? colors.surface : colors.primary }]}
+            onPress={handleAuthPress}
+          >
+            {user ? (
+              <User size={20} color={colors.text} />
+            ) : (
+              <Text style={[styles.authText, { color: colors.background }]}>Log In</Text>
+            )}
+          </TouchableOpacity>
+        )}
+      </View>
+      
+      {showDropdown && (
+        <Pressable 
+          style={styles.overlay} 
+          onPress={() => setShowDropdown(false)}
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
+    zIndex: 10002,
+    position: 'relative',
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  logoImage: {
+    width: 32,
+    height: 32,
+  },
+  logoText: {
+    fontSize: 24,
+    fontWeight: 'bold' as const,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  themeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  authButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 60,
+  },
+  authText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  dropdownContainer: {
+    position: 'relative',
+    zIndex: 10001,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
+  },
+  dropdownText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  dropdown: {
+    position: 'absolute',
+    top: '100%',
+    right: 0,
+    marginTop: 4,
+    minWidth: 120,
+    borderRadius: 8,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 10002,
+  },
+  dropdownItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10001,
+  },
+});
