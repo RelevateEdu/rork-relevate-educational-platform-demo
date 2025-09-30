@@ -17,9 +17,7 @@ function RootLayoutNav() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="pricing" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="dashboard/student" options={{ headerShown: false }} />
-      <Stack.Screen name="dashboard/teacher" options={{ headerShown: false }} />
-      <Stack.Screen name="dashboard/business" options={{ headerShown: false }} />
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="waitlist" options={{ headerShown: false }} />
       <Stack.Screen name="about" options={{ headerShown: false }} />
       <Stack.Screen name="changelog" options={{ headerShown: false }} />
