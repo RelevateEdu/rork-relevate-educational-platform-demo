@@ -1,304 +1,254 @@
-import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
-import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, Animated, Platform, AccessibilityInfo, Easing } from 'react-native';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Home, LineChart, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeContext } from '@/contexts/ThemeContext';
-import { Home, LineChart, User2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { emitScrollToTop } from '@/utils/scrollEvents';
+import { useThemeContext } from '@/contexts/ThemeContext';
 
-const NAV_HEIGHT = 64;
+const easeOut = (value: Animated.Value, toValue: number, duration: number, useNativeDriver: boolean) =>
+  Animated.timing(value, { toValue, duration, easing: Easing.out(Easing.cubic), useNativeDriver });
 
-type TabKey = 'home' | 'progress' | 'profile';
+type IconName = 'home' | 'progress' | 'profile';
+
+function getIcon(name: IconName, color: string) {
+  const size = 22;
+  switch (name) {
+    case 'home':
+      return <Home width={size} height={size} color={color} />;
+    case 'progress':
+      return <LineChart width={size} height={size} color={color} />;
+    case 'profile':
+      return <User width={size} height={size} color={color} />;
+  }
+}
 
 export default function BottomNav(props: BottomTabBarProps) {
   const { state, descriptors, navigation } = props;
-  const { colors, theme } = useThemeContext();
   const insets = useSafeAreaInsets();
+  const { colors, theme } = useThemeContext();
   const [reduceMotion, setReduceMotion] = useState<boolean>(false);
 
-  const tabs = useMemo(() => {
-    return state.routes.map((route) => {
-      const options = descriptors[route.key]?.options ?? {};
-      const name = route.name as TabKey;
-      return { key: route.key, name, route };
-    }).filter(t => ['home','progress','profile'].includes(t.name));
-  }, [state.routes, descriptors]);
-
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      setReduceMotion(false);
-    } else {
-      const { AccessibilityInfo } = require('react-native');
-      AccessibilityInfo.isReduceMotionEnabled?.().then((v: boolean) => setReduceMotion(Boolean(v))).catch(() => setReduceMotion(false));
+    if (Platform.OS !== 'web') {
+      AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => setReduceMotion(false));
     }
   }, []);
 
-  const handlePress = useCallback((index: number, routeName: string, isFocused: boolean) => {
-    if (Platform.OS !== 'web') {
-      try { Haptics.selectionAsync(); } catch { /* noop web */ }
-    } else {
-      console.log('Haptics not available on web');
-    }
+  const routes = state.routes as typeof state.routes & { name: string }[];
 
-    if (isFocused) {
-      emitScrollToTop(routeName);
-      return;
-    }
+  const anims = useRef(
+    routes.reduce<Record<string, { width: Animated.Value; labelOpacity: Animated.Value; labelTranslate: Animated.Value }>>((acc, r) => {
+      acc[r.key] = {
+        width: new Animated.Value(48),
+        labelOpacity: new Animated.Value(0),
+        labelTranslate: new Animated.Value(4),
+      };
+      return acc;
+    }, {})
+  ).current;
 
-    const event = navigation.emit({
-      type: 'tabPress',
-      target: state.routes[index].key,
-      canPreventDefault: true,
+  useEffect(() => {
+    routes.forEach((route, index) => {
+      const focused = state.index === index;
+      const a = anims[route.key];
+      if (!a) return;
+      if (reduceMotion) {
+        a.width.setValue(focused ? 120 : 48);
+        a.labelOpacity.setValue(focused ? 1 : 0);
+        a.labelTranslate.setValue(focused ? 0 : 4);
+        return;
+      }
+      Animated.parallel([
+        easeOut(a.width, focused ? 120 : 48, 220, true),
+        easeOut(a.labelOpacity, focused ? 1 : 0, 160, true),
+        easeOut(a.labelTranslate, focused ? 0 : 4, 160, true),
+      ]).start();
     });
+  }, [state.index, routes, anims, reduceMotion]);
 
-    if (!event.defaultPrevented) {
-      navigation.navigate({ name: state.routes[index].name, params: state.routes[index].params });
-    }
-  }, [navigation, state.routes]);
+  const onPressTab = useCallback(
+    (routeName: string, routeKey: string, isFocused: boolean) => {
+      const event = navigation.emit({
+        type: 'tabPress',
+        target: routeKey,
+        canPreventDefault: true,
+      });
+
+      if (Platform.OS !== 'web') {
+        try {
+          if (typeof Haptics.selectionAsync === 'function') {
+            Haptics.selectionAsync();
+          }
+        } catch {}
+      } else {
+        console.log('Haptics not available on web');
+      }
+
+      if (!isFocused && !event.defaultPrevented) {
+        navigation.navigate(routeName as never);
+      } else if (isFocused) {
+        // Emit a custom event for scroll-to-top for any listeners in the screen
+        navigation.emit({ type: 'tabLongPress', target: routeKey });
+        // Also emit a custom event name that screen can listen for
+        navigation.emit({ type: 'reselect', target: routeKey } as any);
+      }
+    },
+    [navigation]
+  );
+
+  const [tooltip, setTooltip] = useState<{ key: string; label: string } | null>(null);
 
   return (
-    <View
-      style={[
-        styles.wrapper,
-        { paddingBottom: Math.max(insets.bottom, 10) },
-      ]}
-      pointerEvents="box-none"
-      testID="bottom-nav-wrapper"
-    >
+    <View style={[styles.wrapper]} pointerEvents="box-none">
       <View
         style={[
-          styles.bar,
+          styles.container,
           {
             backgroundColor: colors.card,
-            borderColor: (colors as any).border ?? '#e5e7eb',
+            borderColor: theme === 'dark' ? '#2a2a2a' : '#e5e7eb',
+            paddingBottom: insets.bottom + 8,
+            shadowColor: theme === 'dark' ? '#000' : '#0a0a0a',
           },
         ]}
-        pointerEvents="auto"
-        testID="bottom-nav-bar"
+        testID="bottom-nav"
       >
-        {tabs.map((t, idx) => (
-          <TabItem
-            key={t.key}
-            index={idx}
-            routeName={t.name}
-            isFocused={state.index === idx}
-            onPress={handlePress}
-            colors={{
-              primary: colors.primary,
-              text: colors.text,
-              muted: colors.textMuted ?? '#8E8E93',
-              background: colors.background,
-              card: colors.card,
-              border: (colors as any).border ?? '#e5e7eb',
-            }}
-            reduceMotion={reduceMotion}
-            badge={t.name === 'progress' ? descriptors[tabs[idx].key]?.options?.tabBarBadge as number | undefined : undefined}
-          />
-        ))}
+        {routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const isFocused = state.index === index;
+          const label = (options.title ?? route.name) as string;
+          const iconName: IconName = route.name === 'home' ? 'home' : route.name === 'progress' ? 'progress' : 'profile';
+          const badge = (options as unknown as { tabBarBadge?: number }).tabBarBadge;
+
+          return (
+            <Pressable
+              key={route.key}
+              accessibilityRole="button"
+              accessibilityState={isFocused ? { selected: true } : {}}
+              accessibilityLabel={label}
+              onPress={() => onPressTab(route.name, route.key, isFocused)}
+              onLongPress={() => {
+                setTooltip({ key: route.key, label });
+                setTimeout(() => setTooltip((t) => (t?.key === route.key ? null : t)), 750);
+              }}
+              style={styles.tab}
+              testID={`tab-${route.name}`}
+            >
+              <Animated.View
+                style={[
+                  styles.pill,
+                  {
+                    backgroundColor: isFocused ? colors.primary : 'transparent',
+                    borderColor: isFocused ? colors.primary : colors.border,
+                    width: anims[route.key]?.width ?? 48,
+                  },
+                ]}
+                pointerEvents="none"
+              >
+                {badge && badge > 0 ? (
+                  <View style={[styles.badge, { backgroundColor: colors.error }]}>
+                    <Text style={styles.badgeText}>{badge > 99 ? '99+' : String(badge)}</Text>
+                  </View>
+                ) : null}
+                <View style={styles.pillContent} pointerEvents="none">
+                  {getIcon(iconName, isFocused ? colors.background : colors.text)}
+                  <Animated.Text
+                    style={[
+                      styles.pillLabel,
+                      {
+                        color: colors.background,
+                        opacity: anims[route.key]?.labelOpacity ?? 0,
+                        transform: [{ translateX: anims[route.key]?.labelTranslate ?? new Animated.Value(4) }],
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    <Text style={[styles.pillLabel, { color: colors.background }]}>{label}</Text>
+                  </Animated.Text>
+                </View>
+              </Animated.View>
+              {tooltip?.key === route.key ? (
+                <View style={[styles.tooltip, { backgroundColor: theme === 'dark' ? '#111827' : '#111827' }]}
+                  pointerEvents="none"
+                >
+                  <Text style={[styles.tooltipText, { color: '#ffffff' }]}>{label}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+          );
+        })}
       </View>
     </View>
-  );
-}
-
-function TabItem({ index, routeName, isFocused, onPress, colors, reduceMotion, badge }: {
-  index: number;
-  routeName: TabKey;
-  isFocused: boolean;
-  onPress: (index: number, routeName: string, isFocused: boolean) => void;
-  colors: { primary: string; text: string; muted: string; background: string; card: string; border: string };
-  reduceMotion: boolean;
-  badge?: number;
-}) {
-  const widthAnim = useRef(new Animated.Value(isFocused ? 110 : 48)).current;
-  const fadeAnim = useRef(new Animated.Value(isFocused ? 1 : 0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const [showTooltip, setShowTooltip] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      widthAnim.setValue(isFocused ? 110 : 48);
-      fadeAnim.setValue(isFocused ? 1 : 0);
-      return;
-    }
-    Animated.timing(widthAnim, {
-      toValue: isFocused ? 110 : 48,
-      duration: 180,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: false,
-    }).start();
-    Animated.timing(fadeAnim, {
-      toValue: isFocused ? 1 : 0,
-      duration: 160,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  }, [isFocused, widthAnim, fadeAnim, reduceMotion]);
-
-  const Icon = useMemo(() => {
-    switch (routeName) {
-      case 'home':
-        return Home;
-      case 'progress':
-        return LineChart;
-      case 'profile':
-        return User2;
-    }
-  }, [routeName]);
-
-  const label = useMemo(() => {
-    switch (routeName) {
-      case 'home': return 'Home';
-      case 'progress': return 'Progress';
-      case 'profile': return 'Profile';
-    }
-  }, [routeName]);
-
-  const onLongPress = useCallback(() => {
-    setShowTooltip(true);
-    setTimeout(() => setShowTooltip(false), 800);
-  }, []);
-
-  const handlePressIn = useCallback(() => {
-    if (!reduceMotion) {
-      Animated.timing(scaleAnim, { toValue: 0.96, duration: 80, useNativeDriver: true }).start();
-    }
-  }, [reduceMotion, scaleAnim]);
-
-  const handlePressOut = useCallback(() => {
-    if (!reduceMotion) {
-      Animated.timing(scaleAnim, { toValue: 1, duration: 80, useNativeDriver: true }).start();
-    }
-  }, [reduceMotion, scaleAnim]);
-
-  return (
-    <Pressable
-      onPress={() => onPress(index, routeName, isFocused)}
-      onLongPress={onLongPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={styles.tabPressable}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: isFocused }}
-      testID={`tab-${routeName}`}
-    >
-      <Animated.View
-        style={[
-          styles.tab,
-          {
-            transform: [{ scale: scaleAnim }],
-            backgroundColor: isFocused ? (Platform.OS === 'ios' ? colors.card : colors.card) : 'transparent',
-            borderColor: isFocused ? colors.primary : 'transparent',
-          },
-        ]}
-      >
-        <Animated.View style={[styles.pill, { width: widthAnim, backgroundColor: isFocused ? colors.primary : 'transparent' }]}> 
-          <Icon size={22} color={isFocused ? colors.background : colors.text} />
-          <Animated.View style={{ opacity: fadeAnim }}>
-            {isFocused ? (
-              <Text style={[styles.label, { color: colors.background }]} numberOfLines={1}>
-                {label}
-              </Text>
-            ) : null}
-          </Animated.View>
-          {routeName === 'progress' && typeof badge === 'number' && badge > 0 ? (
-            <View style={[styles.badge, { backgroundColor: '#FF3B30' }]}
-              testID="progress-badge"
-            >
-              <Text style={styles.badgeText}>{badge > 99 ? '99+' : String(badge)}</Text>
-            </View>
-          ) : null}
-        </Animated.View>
-        {showTooltip ? (
-          <View style={[styles.tooltip, { backgroundColor: colors.card, borderColor: colors.border }]} pointerEvents="none">
-            <Text style={[styles.tooltipText, { color: colors.text }]}>{label}</Text>
-          </View>
-        ) : null}
-      </Animated.View>
-    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
+    bottom: 0,
     left: 0,
     right: 0,
-    bottom: 0,
-    zIndex: 100,
-    alignItems: 'center',
   },
-  bar: {
-    height: NAV_HEIGHT,
-    borderRadius: 20,
-    marginHorizontal: 16,
-    marginTop: 8,
-    paddingHorizontal: 10,
-    borderWidth: 1,
+  container: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 10,
-  },
-  tabPressable: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
+    paddingTop: 8,
+    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    zIndex: 100,
   },
   tab: {
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 0,
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
+    paddingVertical: 8,
   },
   pill: {
     height: 44,
-    borderRadius: 22,
+    borderRadius: 999,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
-  label: {
+  pillContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+  },
+  pillLabel: {
     fontSize: 14,
-    fontWeight: '600' as const,
+    fontWeight: '600',
   },
   badge: {
     position: 'absolute',
-    top: 2,
-    right: 8,
+    top: -6,
+    right: -2,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
+    paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
   },
   badgeText: {
-    color: '#fff',
+    color: 'white',
     fontSize: 10,
-    fontWeight: '700' as const,
+    fontWeight: '700',
   },
   tooltip: {
     position: 'absolute',
-    bottom: 50,
+    bottom: 54,
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 8,
-    borderWidth: 1,
+    opacity: 0.95,
   },
   tooltipText: {
     fontSize: 12,
-    fontWeight: '600' as const,
+    fontWeight: '600',
   },
 });
-
-export const bottomNavHeight = NAV_HEIGHT;

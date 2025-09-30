@@ -1,43 +1,29 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useThemeContext } from '@/contexts/ThemeContext';
-import { onScrollToTop } from '@/utils/scrollEvents';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { bottomNavHeight } from '@/components/BottomNav';
 
-export default function Progress() {
-  const { colors } = useThemeContext();
+export default function ProgressScreen() {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView | null>(null);
 
-  useEffect(() => {
-    const off = onScrollToTop((e) => {
-      if (e.routeName === 'progress') {
-        scrollRef.current?.scrollTo({ y: 0, animated: true });
-      }
-    });
-    return off;
-  }, []);
-
   return (
-    <ScrollView
-      ref={scrollRef}
-      contentContainerStyle={[
-        styles.container,
-        {
-          backgroundColor: colors.background,
-          paddingTop: insets.top + 12,
-          paddingBottom: bottomNavHeight + Math.max(insets.bottom, 12),
-        },
-      ]}
-    > 
-      <Text style={[styles.title, { color: colors.text }]} testID="progress-title">Progress</Text>
-      <View style={{ height: 800 }} />
-    </ScrollView>
+    <View style={[styles.container, { paddingBottom: insets.bottom + 64 }]}> 
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content} testID="progress-scroll">
+        <Text style={styles.title}>Progress</Text>
+        <Text style={styles.text}>Your progress dashboard will appear here.</Text>
+        <Pressable onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })} style={styles.button}>
+          <Text style={styles.buttonText}>Scroll to top</Text>
+        </Pressable>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, paddingHorizontal: 16 },
-  title: { fontSize: 24, fontWeight: '700' as const },
+  container: { flex: 1 },
+  content: { padding: 16 },
+  title: { fontSize: 24, fontWeight: '700', marginBottom: 8 },
+  text: { fontSize: 16, opacity: 0.7, marginBottom: 12 },
+  button: { padding: 12, backgroundColor: '#2563eb', borderRadius: 12, alignSelf: 'flex-start' },
+  buttonText: { color: 'white', fontWeight: '600' },
 });

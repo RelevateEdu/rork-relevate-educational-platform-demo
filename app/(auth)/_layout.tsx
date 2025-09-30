@@ -1,25 +1,19 @@
-import React, { useEffect } from 'react';
-import { Tabs, Redirect } from 'expo-router';
+import React, { useMemo } from 'react';
+import { Tabs } from 'expo-router';
+import { Platform } from 'react-native';
 import BottomNav from '@/components/BottomNav';
-import { useAuth } from '@/contexts/AuthContext';
 
-export default function AuthLayout() {
-  const { user, isLoading } = useAuth();
-
-  useEffect(() => {
-    console.log('[AuthLayout] user changed', user?.email);
-  }, [user]);
-
-  if (isLoading) return null;
-  if (!user) return <Redirect href="/login" />;
-
+export default function AuthenticatedLayout() {
   return (
     <Tabs
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: Platform.select({ web: { display: 'flex' }, default: {} }) as unknown as undefined,
+      }}
       tabBar={(props) => <BottomNav {...props} />}
     >
       <Tabs.Screen name="home" options={{ title: 'Home' }} />
-      <Tabs.Screen name="progress" options={{ title: 'Progress', tabBarBadge: 0 }} />
+      <Tabs.Screen name="progress" options={{ title: 'Progress' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );

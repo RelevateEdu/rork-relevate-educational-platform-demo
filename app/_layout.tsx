@@ -27,6 +27,7 @@ function RootLayoutNav() {
       <Stack.Screen name="subjects/[subjectId]" options={{ headerShown: false }} />
       <Stack.Screen name="subjects/[subjectId]/topics/[topicId]" options={{ headerShown: false }} />
       <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
     </Stack>
   );
 }
