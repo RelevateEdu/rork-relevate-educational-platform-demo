@@ -2,7 +2,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type UserRole = 'student' | 'teacher' | 'business';
+export type UserRole = 'student' | 'teacher' | 'employee' | 'employer';
 
 export interface User {
   id: string;
@@ -26,7 +26,13 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         try {
           const parsed = JSON.parse(userData);
           if (parsed && typeof parsed === 'object' && parsed.id && parsed.email && parsed.role) {
-            setUser(parsed);
+            const validRoles = ['student', 'teacher', 'employee', 'employer'];
+            if (validRoles.includes(parsed.role)) {
+              setUser(parsed);
+            } else {
+              console.log('Invalid role, clearing storage');
+              await AsyncStorage.removeItem('user');
+            }
           } else {
             console.log('Invalid user data format, clearing storage');
             await AsyncStorage.removeItem('user');

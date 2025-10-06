@@ -14,6 +14,7 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<'education' | 'business'>('education');
   const [selectedRole, setSelectedRole] = useState<UserRole>('student');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -28,6 +29,12 @@ export default function LoginScreen() {
   const roleScaleAnims = useRef({
     student: new Animated.Value(1),
     teacher: new Animated.Value(1),
+    employee: new Animated.Value(1),
+    employer: new Animated.Value(1)
+  }).current;
+  
+  const categoryScaleAnims = useRef({
+    education: new Animated.Value(1),
     business: new Animated.Value(1)
   }).current;
   
@@ -37,11 +44,17 @@ export default function LoginScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
 
-  const roles: { value: UserRole; label: string }[] = [
+  const educationRoles: { value: UserRole; label: string }[] = [
     { value: 'student', label: 'Student' },
     { value: 'teacher', label: 'Teacher' },
-    { value: 'business', label: 'Training' },
   ];
+  
+  const businessRoles: { value: UserRole; label: string }[] = [
+    { value: 'employee', label: 'Employee' },
+    { value: 'employer', label: 'Employer' },
+  ];
+  
+  const currentRoles = selectedCategory === 'education' ? educationRoles : businessRoles;
   
   useEffect(() => {
     // Load saved role
@@ -84,7 +97,8 @@ export default function LoginScreen() {
     if (role.length > 20) return;
     const sanitizedRole = role.trim();
     
-    if (sanitizedRole !== 'student' && sanitizedRole !== 'teacher' && sanitizedRole !== 'business') {
+    const validRoles = ['student', 'teacher', 'employee', 'employer'];
+    if (!validRoles.includes(sanitizedRole)) {
       return;
     }
     
@@ -157,13 +171,41 @@ export default function LoginScreen() {
     }
   };
   
+  const handleCategoryPress = (category: 'education' | 'business') => {
+    setSelectedCategory(category);
+    setAuthError('');
+    
+    // Set default role for the category
+    if (category === 'education') {
+      setSelectedRole('student');
+    } else {
+      setSelectedRole('employee');
+    }
+    
+    if (!reduceMotion) {
+      Animated.sequence([
+        Animated.timing(categoryScaleAnims[category], {
+          toValue: 0.98,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(categoryScaleAnims[category], {
+          toValue: 1,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  };
+  
   const handleRolePress = (role: UserRole) => {
     // Validate role input
     if (!role || !role.trim()) return;
     if (role.length > 20) return;
     const sanitizedRole = role.trim() as UserRole;
     
-    if (sanitizedRole !== 'student' && sanitizedRole !== 'teacher' && sanitizedRole !== 'business') {
+    const validRoles = ['student', 'teacher', 'employee', 'employer'];
+    if (!validRoles.includes(sanitizedRole)) {
       return;
     }
     
@@ -211,8 +253,11 @@ export default function LoginScreen() {
         case 'teacher':
           router.replace('/dashboard/teacher');
           break;
-        case 'business':
-          router.replace('/dashboard/business');
+        case 'employee':
+          router.replace('/dashboard/employee');
+          break;
+        case 'employer':
+          router.replace('/dashboard/employer');
           break;
       }
     } catch {
@@ -271,10 +316,75 @@ export default function LoginScreen() {
 
           {/* Form Card */}
           <View style={[styles.form, { backgroundColor: colors.card, borderColor: theme === 'dark' ? '#333333' : '#e2e8f0' }]}>
+                {/* Category Toggle */}
+                <View style={styles.categorySelector}>
+                  <View style={styles.categoryButtons}>
+                    <Animated.View
+                      style={[styles.categoryButtonWrapper, { transform: [{ scale: categoryScaleAnims.education }] }]}
+                    >
+                      <Pressable
+                        style={[
+                          styles.categoryButton,
+                          { borderColor: colors.border },
+                          selectedCategory === 'education' && { 
+                            backgroundColor: colors.primary, 
+                            borderColor: colors.primary 
+                          },
+                        ]}
+                        onPress={() => handleCategoryPress('education')}
+                        accessible={true}
+                        accessibilityRole="button"
+                        accessibilityLabel="Select Education category"
+                        accessibilityState={{ selected: selectedCategory === 'education' }}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryButtonText,
+                            { color: selectedCategory === 'education' ? colors.background : colors.text },
+                          ]}
+                        >
+                          Education
+                        </Text>
+                      </Pressable>
+                    </Animated.View>
+                    
+                    <Animated.View
+                      style={[styles.categoryButtonWrapper, { transform: [{ scale: categoryScaleAnims.business }] }]}
+                    >
+                      <Pressable
+                        style={[
+                          styles.categoryButton,
+                          { borderColor: colors.border },
+                          selectedCategory === 'business' && { 
+                            backgroundColor: colors.primary, 
+                            borderColor: colors.primary 
+                          },
+                        ]}
+                        onPress={() => handleCategoryPress('business')}
+                        accessible={true}
+                        accessibilityRole="button"
+                        accessibilityLabel="Select Business category"
+                        accessibilityState={{ selected: selectedCategory === 'business' }}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryButtonText,
+                            { color: selectedCategory === 'business' ? colors.background : colors.text },
+                          ]}
+                        >
+                          Business
+                        </Text>
+                      </Pressable>
+                    </Animated.View>
+                  </View>
+                </View>
+
                 {/* Role Selector */}
                 <View style={styles.roleSelector}>
                   <View style={styles.roleButtons}>
-                    {roles.map((role) => (
+                    {currentRoles.map((role) => (
                       <Animated.View
                         key={role.value}
                         style={[{ transform: [{ scale: roleScaleAnims[role.value] }] }]}
@@ -530,6 +640,30 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
+  },
+  categorySelector: {
+    marginBottom: 20,
+  },
+  categoryButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  categoryButtonWrapper: {
+    flex: 1,
+  },
+  categoryButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    minHeight: 48,
+    justifyContent: 'center',
+  },
+  categoryButtonText: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+    textAlign: 'center',
   },
   roleSelector: {
     marginBottom: 24,
