@@ -37,20 +37,64 @@ export const [BusinessProvider, useBusiness] = createContextHook(() => {
         AsyncStorage.getItem('favoriteCourses'),
       ]);
 
-      if (companyData) {
-        setCompany(JSON.parse(companyData));
+      if (companyData && companyData.trim()) {
+        try {
+          const parsed = JSON.parse(companyData);
+          if (parsed && typeof parsed === 'object') {
+            setCompany(parsed);
+          }
+        } catch (e) {
+          console.log('Error parsing company data, clearing:', e);
+          await AsyncStorage.removeItem('company');
+        }
       }
-      if (employeesData) {
-        setEmployees(JSON.parse(employeesData));
+      
+      if (employeesData && employeesData.trim()) {
+        try {
+          const parsed = JSON.parse(employeesData);
+          if (Array.isArray(parsed)) {
+            setEmployees(parsed);
+          }
+        } catch (e) {
+          console.log('Error parsing employees data, clearing:', e);
+          await AsyncStorage.removeItem('employees');
+        }
       }
-      if (completionsData) {
-        setCompletions(JSON.parse(completionsData));
+      
+      if (completionsData && completionsData.trim()) {
+        try {
+          const parsed = JSON.parse(completionsData);
+          if (Array.isArray(parsed)) {
+            setCompletions(parsed);
+          }
+        } catch (e) {
+          console.log('Error parsing completions data, clearing:', e);
+          await AsyncStorage.removeItem('completions');
+        }
       }
-      if (certificatesData) {
-        setCertificates(JSON.parse(certificatesData));
+      
+      if (certificatesData && certificatesData.trim()) {
+        try {
+          const parsed = JSON.parse(certificatesData);
+          if (Array.isArray(parsed)) {
+            setCertificates(parsed);
+          }
+        } catch (e) {
+          console.log('Error parsing certificates data, clearing:', e);
+          await AsyncStorage.removeItem('certificates');
+        }
       }
-      if (favoritesData) {
-        setFavoriteCourses(JSON.parse(favoritesData));
+      
+      if (favoritesData && favoritesData.trim()) {
+        try {
+          const parsed = JSON.parse(favoritesData);
+          if (Array.isArray(parsed)) {
+            setFavoriteCourses(parsed);
+          }
+        } catch (e) {
+          console.log('Error parsing favorites data, clearing:', e);
+          await AsyncStorage.removeItem('favoriteCourses');
+        }
       }
     } catch (error) {
       console.log('Error loading business data:', error);
