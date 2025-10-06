@@ -22,7 +22,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   const loadUser = async () => {
     try {
       const userData = await AsyncStorage.getItem('user');
-      if (userData && userData.trim()) {
+      if (userData && userData.trim() && userData !== 'undefined' && userData !== 'null') {
         try {
           const parsed = JSON.parse(userData);
           if (parsed && typeof parsed === 'object' && parsed.id && parsed.email && parsed.role) {
@@ -38,7 +38,8 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
             await AsyncStorage.removeItem('user');
           }
         } catch (parseError) {
-          console.log('Error parsing user data, clearing storage');
+          console.error('JSON Parse error in user data:', parseError);
+          console.log('Corrupted data:', userData);
           await AsyncStorage.removeItem('user');
         }
       } else if (userData) {
@@ -46,11 +47,11 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         await AsyncStorage.removeItem('user');
       }
     } catch (error) {
-      console.log('Error loading user:', error);
+      console.error('Error loading user:', error);
       try {
         await AsyncStorage.removeItem('user');
       } catch (clearError) {
-        console.log('Error clearing storage:', clearError);
+        console.error('Error clearing storage:', clearError);
       }
     } finally {
       setIsLoading(false);

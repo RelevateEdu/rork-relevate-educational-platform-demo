@@ -37,67 +37,72 @@ export const [BusinessProvider, useBusiness] = createContextHook(() => {
         AsyncStorage.getItem('favoriteCourses'),
       ]);
 
-      if (companyData && companyData.trim()) {
+      if (companyData && companyData.trim() && companyData !== 'undefined' && companyData !== 'null') {
         try {
           const parsed = JSON.parse(companyData);
           if (parsed && typeof parsed === 'object') {
             setCompany(parsed);
           }
         } catch (e) {
-          console.log('Error parsing company data, clearing:', e);
+          console.error('Error parsing company data:', e);
+          console.log('Corrupted company data:', companyData);
           await AsyncStorage.removeItem('company');
         }
       }
       
-      if (employeesData && employeesData.trim()) {
+      if (employeesData && employeesData.trim() && employeesData !== 'undefined' && employeesData !== 'null') {
         try {
           const parsed = JSON.parse(employeesData);
           if (Array.isArray(parsed)) {
             setEmployees(parsed);
           }
         } catch (e) {
-          console.log('Error parsing employees data, clearing:', e);
+          console.error('Error parsing employees data:', e);
+          console.log('Corrupted employees data:', employeesData);
           await AsyncStorage.removeItem('employees');
         }
       }
       
-      if (completionsData && completionsData.trim()) {
+      if (completionsData && completionsData.trim() && completionsData !== 'undefined' && completionsData !== 'null') {
         try {
           const parsed = JSON.parse(completionsData);
           if (Array.isArray(parsed)) {
             setCompletions(parsed);
           }
         } catch (e) {
-          console.log('Error parsing completions data, clearing:', e);
+          console.error('Error parsing completions data:', e);
+          console.log('Corrupted completions data:', completionsData);
           await AsyncStorage.removeItem('completions');
         }
       }
       
-      if (certificatesData && certificatesData.trim()) {
+      if (certificatesData && certificatesData.trim() && certificatesData !== 'undefined' && certificatesData !== 'null') {
         try {
           const parsed = JSON.parse(certificatesData);
           if (Array.isArray(parsed)) {
             setCertificates(parsed);
           }
         } catch (e) {
-          console.log('Error parsing certificates data, clearing:', e);
+          console.error('Error parsing certificates data:', e);
+          console.log('Corrupted certificates data:', certificatesData);
           await AsyncStorage.removeItem('certificates');
         }
       }
       
-      if (favoritesData && favoritesData.trim()) {
+      if (favoritesData && favoritesData.trim() && favoritesData !== 'undefined' && favoritesData !== 'null') {
         try {
           const parsed = JSON.parse(favoritesData);
           if (Array.isArray(parsed)) {
             setFavoriteCourses(parsed);
           }
         } catch (e) {
-          console.log('Error parsing favorites data, clearing:', e);
+          console.error('Error parsing favorites data:', e);
+          console.log('Corrupted favorites data:', favoritesData);
           await AsyncStorage.removeItem('favoriteCourses');
         }
       }
     } catch (error) {
-      console.log('Error loading business data:', error);
+      console.error('Error loading business data:', error);
     } finally {
       setIsLoading(false);
     }
