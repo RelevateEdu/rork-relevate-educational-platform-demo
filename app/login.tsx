@@ -546,6 +546,27 @@ export default function LoginScreen() {
                   </View>
                 </Pressable>
 
+                {/* Join Relevate Button - Only for Employer */}
+                {selectedRole === 'employer' && (
+                  <Pressable
+                    style={[
+                      styles.joinButton,
+                      { 
+                        backgroundColor: colors.card,
+                        borderColor: colors.primary,
+                      },
+                    ]}
+                    onPress={() => router.push('/plans')}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel="Join Relevate"
+                  >
+                    <Text style={[styles.joinButtonText, { color: colors.primary }]}>
+                      Join Relevate
+                    </Text>
+                  </Pressable>
+                )}
+
                 {/* Demo Note */}
                 <Text style={[styles.demoNote, { color: colors.textMuted }]}>
                   Demo mode: use any email/password combination
@@ -752,6 +773,19 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   loginButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+  },
+  joinButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+    marginTop: 12,
+    borderWidth: 2,
+  },
+  joinButtonText: {
     fontSize: 16,
     fontWeight: '600' as const,
   },
