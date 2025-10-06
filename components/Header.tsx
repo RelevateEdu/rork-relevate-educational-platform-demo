@@ -14,20 +14,28 @@ export function Header({ showAuth = true }: HeaderProps) {
   const { colors, theme, toggleTheme } = useThemeContext();
   const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showAboutDropdown, setShowAboutDropdown] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   const handleAuthPress = () => {
-    if (user) {
-      logout();
-    } else {
-      router.push('/login');
-    }
+    router.push('/login');
   };
 
-  const handleDropdownPress = (route: string) => {
+  const handleAboutDropdownPress = (route: string) => {
     if (!route.trim() || route.length > 100) return;
-    setShowDropdown(false);
+    setShowAboutDropdown(false);
     router.push(route.trim());
+  };
+
+  const handleLogout = async () => {
+    setShowUserDropdown(false);
+    await logout();
+    router.push('/');
+  };
+
+  const handleSettings = () => {
+    setShowUserDropdown(false);
+    router.push('/settings');
   };
 
   return (
@@ -53,57 +61,87 @@ export function Header({ showAuth = true }: HeaderProps) {
           )}
         </TouchableOpacity>
         
-        <View style={styles.dropdownContainer}>
-          <TouchableOpacity
-            style={[styles.dropdownButton, { backgroundColor: colors.surface }]}
-            onPress={() => setShowDropdown(!showDropdown)}
-          >
-            <Text style={[styles.dropdownText, { color: colors.text }]}>About</Text>
-            <ChevronDown size={16} color={colors.text} />
-          </TouchableOpacity>
-          
-          {showDropdown && (
-            <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={() => handleDropdownPress('/about')}
-              >
-                <Text style={[styles.dropdownItemText, { color: colors.text }]}>About us</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={() => handleDropdownPress('/changelog')}
-              >
-                <Text style={[styles.dropdownItemText, { color: colors.text }]}>News</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={() => handleDropdownPress('/waitlist')}
-              >
-                <Text style={[styles.dropdownItemText, { color: colors.text }]}>Refer us</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+        {!user && (
+          <View style={styles.dropdownContainer}>
+            <TouchableOpacity
+              style={[styles.dropdownButton, { backgroundColor: colors.surface }]}
+              onPress={() => setShowAboutDropdown(!showAboutDropdown)}
+            >
+              <Text style={[styles.dropdownText, { color: colors.text }]}>About</Text>
+              <ChevronDown size={16} color={colors.text} />
+            </TouchableOpacity>
+            
+            {showAboutDropdown && (
+              <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => handleAboutDropdownPress('/about')}
+                >
+                  <Text style={[styles.dropdownItemText, { color: colors.text }]}>About us</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => handleAboutDropdownPress('/changelog')}
+                >
+                  <Text style={[styles.dropdownItemText, { color: colors.text }]}>News</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => handleAboutDropdownPress('/waitlist')}
+                >
+                  <Text style={[styles.dropdownItemText, { color: colors.text }]}>Refer us</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
         
         {showAuth && (
-          <TouchableOpacity
-            style={[styles.authButton, { backgroundColor: user ? colors.surface : colors.primary }]}
-            onPress={handleAuthPress}
-          >
-            {user ? (
-              <User size={20} color={colors.text} />
-            ) : (
+          user ? (
+            <View style={styles.dropdownContainer}>
+              <TouchableOpacity
+                style={[styles.authButton, { backgroundColor: colors.surface }]}
+                onPress={() => setShowUserDropdown(!showUserDropdown)}
+              >
+                <User size={20} color={colors.text} />
+                <ChevronDown size={16} color={colors.text} />
+              </TouchableOpacity>
+              
+              {showUserDropdown && (
+                <View style={[styles.dropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={handleSettings}
+                  >
+                    <Text style={[styles.dropdownItemText, { color: colors.text }]}>Settings</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={handleLogout}
+                  >
+                    <Text style={[styles.dropdownItemText, { color: colors.text }]}>Log Out</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.authButton, { backgroundColor: colors.primary }]}
+              onPress={handleAuthPress}
+            >
               <Text style={[styles.authText, { color: colors.background }]}>Log In</Text>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )
         )}
       </View>
       
-      {showDropdown && (
+      {(showAboutDropdown || showUserDropdown) && (
         <Pressable 
           style={styles.overlay} 
-          onPress={() => setShowDropdown(false)}
+          onPress={() => {
+            setShowAboutDropdown(false);
+            setShowUserDropdown(false);
+          }}
         />
       )}
     </View>
@@ -148,12 +186,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   authButton: {
+    flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     minWidth: 60,
+    gap: 4,
   },
   authText: {
     fontSize: 14,
