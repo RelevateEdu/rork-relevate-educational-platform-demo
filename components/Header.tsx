@@ -21,10 +21,9 @@ export function Header({ showAuth = true }: HeaderProps) {
     router.push('/login');
   };
 
-  const handleAboutDropdownPress = (route: string) => {
-    if (!route.trim() || route.length > 100) return;
+  const handleAboutDropdownPress = (route: '/about' | '/changelog' | '/waitlist') => {
     setShowAboutDropdown(false);
-    router.push(route.trim());
+    router.push(route);
   };
 
   const handleLogout = async () => {
