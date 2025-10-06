@@ -12,7 +12,7 @@ interface HeaderProps {
 
 export function Header({ showAuth = true }: HeaderProps) {
   const { colors, theme, toggleTheme } = useThemeContext();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const insets = useSafeAreaInsets();
   const [showAboutDropdown, setShowAboutDropdown] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -60,7 +60,7 @@ export function Header({ showAuth = true }: HeaderProps) {
           )}
         </TouchableOpacity>
         
-        {!user && (
+        {!user && !isLoading && (
           <View style={styles.dropdownContainer}>
             <TouchableOpacity
               style={[styles.dropdownButton, { backgroundColor: colors.surface }]}
@@ -95,7 +95,7 @@ export function Header({ showAuth = true }: HeaderProps) {
           </View>
         )}
         
-        {showAuth && (
+        {showAuth && !isLoading && (
           user ? (
             <View style={styles.dropdownContainer}>
               <TouchableOpacity
