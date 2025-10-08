@@ -10,7 +10,7 @@ export default function ChangelogScreen() {
 
   const changes = [
     {
-      date: '2024-11-28',
+      date: '2025-11-28',
       version: 'v2.1.0',
       icon: Settings,
       title: 'Enhanced User Settings & Authentication',
@@ -18,7 +18,7 @@ export default function ChangelogScreen() {
       type: 'improvement',
     },
     {
-      date: '2024-11-22',
+      date: '2025-11-22',
       version: 'v2.0.0',
       icon: Briefcase,
       title: 'Business Platform Launch',
@@ -26,7 +26,7 @@ export default function ChangelogScreen() {
       type: 'feature',
     },
     {
-      date: '2024-11-18',
+      date: '2025-11-18',
       version: 'v1.9.0',
       icon: Award,
       title: 'Certificate Generation System',
@@ -34,7 +34,7 @@ export default function ChangelogScreen() {
       type: 'feature',
     },
     {
-      date: '2024-11-15',
+      date: '2025-11-15',
       version: 'v1.8.0',
       icon: BookOpen,
       title: 'Business Course Library',
@@ -42,7 +42,7 @@ export default function ChangelogScreen() {
       type: 'feature',
     },
     {
-      date: '2024-11-10',
+      date: '2025-11-10',
       version: 'v1.7.0',
       icon: Users,
       title: 'Team Management Dashboard',
@@ -50,7 +50,7 @@ export default function ChangelogScreen() {
       type: 'feature',
     },
     {
-      date: '2024-11-05',
+      date: '2025-11-05',
       version: 'v1.6.0',
       icon: Briefcase,
       title: 'Business Pricing Plans',
@@ -58,7 +58,7 @@ export default function ChangelogScreen() {
       type: 'feature',
     },
     {
-      date: '2024-10-28',
+      date: '2025-10-28',
       version: 'v1.5.0',
       icon: UserCheck,
       title: 'Dual Login System',
@@ -66,7 +66,7 @@ export default function ChangelogScreen() {
       type: 'feature',
     },
     {
-      date: '2024-10-20',
+      date: '2025-10-20',
       version: 'v1.4.0',
       icon: GraduationCap,
       title: 'Teacher Dashboard Enhancements',
@@ -74,7 +74,7 @@ export default function ChangelogScreen() {
       type: 'improvement',
     },
     {
-      date: '2024-10-12',
+      date: '2025-10-12',
       version: 'v1.3.0',
       icon: Palette,
       title: 'Added Light/Dark Mode',
@@ -82,7 +82,7 @@ export default function ChangelogScreen() {
       type: 'feature',
     },
     {
-      date: '2024-10-05',
+      date: '2025-10-05',
       version: 'v1.2.0',
       icon: UserCheck,
       title: 'Simplified Onboarding',
@@ -90,7 +90,7 @@ export default function ChangelogScreen() {
       type: 'improvement',
     },
     {
-      date: '2024-09-28',
+      date: '2025-09-28',
       version: 'v1.1.0',
       icon: FileText,
       title: 'Past Papers on Quiz Screen',
@@ -98,7 +98,7 @@ export default function ChangelogScreen() {
       type: 'feature',
     },
     {
-      date: '2024-09-15',
+      date: '2025-09-15',
       version: 'v1.0.0',
       icon: GraduationCap,
       title: 'Relevate Platform Launch',
