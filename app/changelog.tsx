@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Stack } from 'expo-router';
-import { Calendar, Palette, UserCheck, FileText } from 'lucide-react-native';
+import { Calendar, Palette, UserCheck, FileText, Briefcase, Users, GraduationCap, Award, BookOpen, Settings } from 'lucide-react-native';
 import { Header } from '@/components/Header';
 import { useThemeContext } from '@/contexts/ThemeContext';
 
@@ -10,27 +10,99 @@ export default function ChangelogScreen() {
 
   const changes = [
     {
-      date: '2024-12-15',
-      version: 'v1.2.0',
-      icon: Palette,
-      title: 'Added Light/Dark Mode',
-      description: 'Users can now switch between light and dark themes. The preference is automatically saved and persists across sessions.',
-      type: 'feature',
-    },
-    {
-      date: '2024-12-10',
-      version: 'v1.1.0',
-      icon: UserCheck,
-      title: 'Simplified Onboarding',
-      description: 'Streamlined the user registration process with role-based dashboards. New users can now get started in under 2 minutes.',
+      date: '2024-11-28',
+      version: 'v2.1.0',
+      icon: Settings,
+      title: 'Enhanced User Settings & Authentication',
+      description: 'Added comprehensive settings page with logout functionality. Improved authentication flow with proper session management and user profile dropdown menu.',
       type: 'improvement',
     },
     {
-      date: '2024-12-05',
-      version: 'v1.0.1',
+      date: '2024-11-22',
+      version: 'v2.0.0',
+      icon: Briefcase,
+      title: 'Business Platform Launch',
+      description: 'Launched complete Business platform with separate Employee and Employer portals. Employers can now manage teams, assign courses, and track completion certificates.',
+      type: 'feature',
+    },
+    {
+      date: '2024-11-18',
+      version: 'v1.9.0',
+      icon: Award,
+      title: 'Certificate Generation System',
+      description: 'Employees can now earn downloadable PDF certificates upon course completion. Certificates are co-branded and remain accessible even after plan cancellation.',
+      type: 'feature',
+    },
+    {
+      date: '2024-11-15',
+      version: 'v1.8.0',
+      icon: BookOpen,
+      title: 'Business Course Library',
+      description: 'Added comprehensive course library with categories including Hospitality, Leadership, Health & Safety, Data Protection, and more. Includes favouriting and assignment features.',
+      type: 'feature',
+    },
+    {
+      date: '2024-11-10',
+      version: 'v1.7.0',
+      icon: Users,
+      title: 'Team Management Dashboard',
+      description: 'Employers can now add employees, assign training courses, track completion status, and manage team access. Includes CSV export functionality for reporting.',
+      type: 'feature',
+    },
+    {
+      date: '2024-11-05',
+      version: 'v1.6.0',
+      icon: Briefcase,
+      title: 'Business Pricing Plans',
+      description: 'Introduced flexible pricing tiers for businesses: Starter (up to 10 employees), Growth (up to 50 employees), and Enterprise (50+ employees) with competitive per-employee pricing.',
+      type: 'feature',
+    },
+    {
+      date: '2024-10-28',
+      version: 'v1.5.0',
+      icon: UserCheck,
+      title: 'Dual Login System',
+      description: 'Redesigned login screen with Education/Business toggle. Users can now easily switch between Student, Teacher, Employee, and Employer login options.',
+      type: 'feature',
+    },
+    {
+      date: '2024-10-20',
+      version: 'v1.4.0',
+      icon: GraduationCap,
+      title: 'Teacher Dashboard Enhancements',
+      description: 'Enhanced teacher portal with class management, homework assignment, and student progress tracking. Teachers can now monitor individual student performance across subjects.',
+      type: 'improvement',
+    },
+    {
+      date: '2024-10-12',
+      version: 'v1.3.0',
+      icon: Palette,
+      title: 'Added Light/Dark Mode',
+      description: 'Users can now switch between light and dark themes. The preference is automatically saved and persists across sessions for a personalized experience.',
+      type: 'feature',
+    },
+    {
+      date: '2024-10-05',
+      version: 'v1.2.0',
+      icon: UserCheck,
+      title: 'Simplified Onboarding',
+      description: 'Streamlined the user registration process with role-based dashboards. New users can now get started in under 2 minutes with guided setup flows.',
+      type: 'improvement',
+    },
+    {
+      date: '2024-09-28',
+      version: 'v1.1.0',
       icon: FileText,
       title: 'Past Papers on Quiz Screen',
-      description: 'Past paper access is now available directly from the quiz interface, making it easier for students to practice with real exam questions.',
+      description: 'Past paper access is now available directly from the quiz interface, making it easier for students to practice with real exam questions and prepare for assessments.',
+      type: 'feature',
+    },
+    {
+      date: '2024-09-15',
+      version: 'v1.0.0',
+      icon: GraduationCap,
+      title: 'Relevate Platform Launch',
+      description: 'Official launch of Relevate education platform with core features for students and teachers. Includes subject browsing, topic learning, AI tutor, and interactive games.',
       type: 'feature',
     },
   ];
