@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.rork.relevate-educational-platform-demo"
+      "bundleIdentifier": "app.rork.relevate.educational.platform.demo"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.relevate-educational-platform-demo"
+      "package": "app.rork.relevate.educational.platform.demo"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
