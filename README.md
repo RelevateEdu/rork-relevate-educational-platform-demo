@@ -42,9 +42,15 @@ bun i
 # Step 4: Start the instant web preview of your Rork app in your browser, with auto-reloading of your changes
 bun run start-web
 
+# Option: Get a copyable localhost URL for web
+# (prints an http://localhost:... link in the terminal)
+bun run start-web-local
+
 # Step 5: Start iOS preview
 # Option A (recommended):
 bun run start  # then press "i" in the terminal to open iOS Simulator
+# If you prefer a localhost URL instead of a tunnel:
+bun run start-local
 # Option B (if supported by your environment):
 bun run start -- --ios
 ```

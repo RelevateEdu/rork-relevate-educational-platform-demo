@@ -6,6 +6,8 @@
     "start": "bunx rork start -p l1q101brdmvzyl5mxi8wn --tunnel",
     "start-web": "bunx rork start -p l1q101brdmvzyl5mxi8wn --web --tunnel",
     "start-web-dev": "DEBUG=expo* bunx rork start -p l1q101brdmvzyl5mxi8wn --web --tunnel",
+    "start-local": "bunx rork start -p l1q101brdmvzyl5mxi8wn --localhost",
+    "start-web-local": "bunx rork start -p l1q101brdmvzyl5mxi8wn --web --localhost",
     "lint": "expo lint"
   },
   "dependencies": {
