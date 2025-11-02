@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, MessageCircle, BookOpen, Users, Briefcase, Globe, Send, Paperclip, X, FileText } from 'lucide-react-native';
+import { ArrowLeft, MessageCircle, BookOpen, Users, Briefcase, Globe, Send, X, FileText, Upload } from 'lucide-react-native';
 import { Header } from '@/components/Header';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useRorkAgent } from '@rork/toolkit-sdk';
@@ -282,6 +282,44 @@ Important: Never output XML tags, code blocks with tool calls, or technical debu
         </View>
       </View>
       
+      <TouchableOpacity 
+        style={[styles.uploadBar, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        onPress={handlePickDocument}
+        disabled={isProcessingFile || isLoading}
+      >
+        {isProcessingFile ? (
+          <ActivityIndicator size="small" color={colors.primary} />
+        ) : (
+          <Upload size={20} color={colors.primary} />
+        )}
+        <Text style={[styles.uploadBarText, { color: colors.text }]}>
+          {isProcessingFile ? 'Uploading...' : 'Upload Content'}
+        </Text>
+        {attachedFiles.length > 0 && (
+          <View style={[styles.uploadBadge, { backgroundColor: colors.primary }]}>
+            <Text style={styles.uploadBadgeText}>{attachedFiles.length}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+      
+      {attachedFiles.length > 0 && (
+        <View style={[styles.attachedFilesTopBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.attachedFilesScroll}>
+            {attachedFiles.map((file, index) => (
+              <View key={index} style={[styles.attachedFileChip, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                <FileText size={16} color={colors.primary} />
+                <Text style={[styles.attachedFileName, { color: colors.text }]} numberOfLines={1}>
+                  {file.name}
+                </Text>
+                <TouchableOpacity onPress={() => handleRemoveFile(index)}>
+                  <X size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+      
       <View style={styles.chatContainer}>
         <ScrollView 
           ref={scrollViewRef}
@@ -346,57 +384,25 @@ Important: Never output XML tags, code blocks with tool calls, or technical debu
           )}
         </ScrollView>
         
-        <View style={styles.inputWrapper}>
-          {attachedFiles.length > 0 && (
-            <View style={[styles.attachedFilesContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {attachedFiles.map((file, index) => (
-                  <View key={index} style={[styles.attachedFileChip, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                    <FileText size={16} color={colors.primary} />
-                    <Text style={[styles.attachedFileName, { color: colors.text }]} numberOfLines={1}>
-                      {file.name}
-                    </Text>
-                    <TouchableOpacity onPress={() => handleRemoveFile(index)}>
-                      <X size={16} color={colors.textSecondary} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-          
-          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-            <TouchableOpacity 
-              style={[styles.attachButton, { borderColor: colors.border }]}
-              onPress={handlePickDocument}
-              disabled={isProcessingFile || isLoading}
-            >
-              {isProcessingFile ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Paperclip size={20} color={colors.textSecondary} />
-              )}
-            </TouchableOpacity>
-            
-            <TextInput
-              style={[styles.textInput, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder={`Ask about ${topic.name}...`}
-              placeholderTextColor={colors.textSecondary}
-              multiline
-              maxLength={500}
-              onSubmitEditing={handleSendMessage}
-              blurOnSubmit={false}
-            />
-            <TouchableOpacity 
-              style={[styles.sendButton, { backgroundColor: (inputText.trim() || attachedFiles.length > 0) ? colors.primary : colors.border }]}
-              onPress={handleSendMessage}
-              disabled={(!inputText.trim() && attachedFiles.length === 0) || isLoading}
-            >
-              <Send size={20} color={(inputText.trim() || attachedFiles.length > 0) ? '#ffffff' : colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+        <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+          <TextInput
+            style={[styles.textInput, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder={`Ask about ${topic.name}...`}
+            placeholderTextColor={colors.textSecondary}
+            multiline
+            maxLength={500}
+            onSubmitEditing={handleSendMessage}
+            blurOnSubmit={false}
+          />
+          <TouchableOpacity 
+            style={[styles.sendButton, { backgroundColor: (inputText.trim() || attachedFiles.length > 0) ? colors.primary : colors.border }]}
+            onPress={handleSendMessage}
+            disabled={(!inputText.trim() && attachedFiles.length === 0) || isLoading}
+          >
+            <Send size={20} color={(inputText.trim() || attachedFiles.length > 0) ? '#ffffff' : colors.textSecondary} />
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -500,13 +506,43 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: 'italic',
   },
-  inputWrapper: {
-    width: '100%',
-  },
-  attachedFilesContainer: {
-    paddingHorizontal: 16,
+  uploadBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 12,
-    borderTopWidth: 1,
+    paddingHorizontal: 20,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 8,
+  },
+  uploadBarText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+  },
+  uploadBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
+  },
+  uploadBadgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold' as const,
+  },
+  attachedFilesTopBar: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    marginBottom: 8,
+  },
+  attachedFilesScroll: {
+    gap: 8,
   },
   attachedFileChip: {
     flexDirection: 'row',
@@ -516,7 +552,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    marginRight: 8,
     maxWidth: 200,
   },
   attachedFileName: {
@@ -530,14 +565,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderTopWidth: 1,
     gap: 12,
-  },
-  attachButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
   },
   textInput: {
     flex: 1,
