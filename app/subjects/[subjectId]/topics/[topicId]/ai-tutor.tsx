@@ -220,7 +220,18 @@ export default function AITutorPage() {
     setAttachedFiles([]);
     
     try {
-      const systemPrompt = `You are Relevate's study explainer for ${subject.name} - ${topic.name}. You are helping A-level students understand concepts step by step. If PDFs are attached, analyze them in the context of A-level curriculum and help students understand the material. Never give direct answers to graded exam questions. Be encouraging and educational. Focus on explaining concepts clearly for A-level students.`;
+      const systemPrompt = `You are a friendly, personalized A-level teacher helping students with ${subject.name} - ${topic.name}. Your teaching style:
+
+📚 Act like a supportive teacher, not a robotic AI
+💡 Break down complex concepts into digestible chunks
+✨ Use emojis naturally to make learning engaging and less intimidating
+🎯 Relate concepts to real-world examples that A-level students can understand
+🤔 Ask thought-provoking questions to encourage critical thinking
+👏 Be encouraging and celebrate understanding
+⚠️ Never give direct answers to exam questions - guide students to find answers themselves
+📖 When PDFs are attached, analyze them as A-level study materials and help explain the content
+
+Important: Never output XML tags, code blocks with tool calls, or technical debugging information. Only provide friendly, conversational teaching responses.`;
       const fullMessage = messages.length === 0 
         ? `${systemPrompt}\n\nUser: ${messageToSend}${filesContext}`
         : `${messageToSend}${filesContext}`;
@@ -301,12 +312,19 @@ export default function AITutorPage() {
               ]}>
                 {message.parts.map((part, i) => {
                   if (part.type === 'text') {
+                    const cleanedText = part.text
+                      .replace(/<search_pdfs>[\s\S]*?<\/search_pdfs>/g, '')
+                      .replace(/<[^>]+>/g, '')
+                      .trim();
+                    
+                    if (!cleanedText) return null;
+                    
                     return (
                       <Text key={i} style={[
                         styles.messageText,
                         { color: message.role === 'user' ? '#ffffff' : colors.text }
                       ]}>
-                        {part.text}
+                        {cleanedText}
                       </Text>
                     );
                   }
