@@ -4,6 +4,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, MessageCircle, BookOpen, Users, Briefcase, Globe, Send } from 'lucide-react-native';
 import { Header } from '@/components/Header';
 import { useThemeContext } from '@/contexts/ThemeContext';
+import { useRorkAgent } from '@rork/toolkit-sdk';
 
 interface Topic {
   id: string;
@@ -20,12 +21,7 @@ interface Subject {
   topics: Topic[];
 }
 
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
+
 
 const subjectsData: Record<string, Subject> = {
   business: {
@@ -97,13 +93,15 @@ const subjectsData: Record<string, Subject> = {
 export default function AITutorPage() {
   const { colors } = useThemeContext();
   const { subjectId, topicId } = useLocalSearchParams<{ subjectId: string; topicId: string }>();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const scrollViewRef = useRef<ScrollView>(null);
   
   const subject = subjectsData[subjectId as string];
   const topic = subject?.topics.find(t => t.id === topicId);
+  
+  const { messages, sendMessage: sendAIMessage } = useRorkAgent({ tools: {} });
+  
+
   
   useEffect(() => {
     if (messages.length > 0) {
@@ -113,74 +111,24 @@ export default function AITutorPage() {
     }
   }, [messages]);
   
-  const sendMessage = async () => {
-    if (!inputText.trim() || isLoading) return;
+  const handleSendMessage = async () => {
+    if (!inputText.trim() || !subject || !topic) return;
     
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputText.trim(),
-      timestamp: new Date(),
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
+    const messageToSend = inputText.trim();
     setInputText('');
-    setIsLoading(true);
     
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          temperature: 0.2,
-          max_tokens: 400,
-          messages: [
-            {
-              role: 'system',
-              content: `You are Relevate's study explainer for ${subject?.name} - ${topic?.name}. Help learners understand concepts step by step. Never give direct answers to graded exam questions. Be encouraging and educational.`
-            },
-            ...messages.map(msg => ({
-              role: msg.role,
-              content: msg.content
-            })),
-            {
-              role: 'user',
-              content: userMessage.content
-            }
-          ]
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to get response');
-      }
-      
-      const data = await response.json();
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: data.choices[0].message.content,
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error('Chat error:', error);
-      const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'Chat unavailable. Please try again.',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
+      const systemPrompt = `You are Relevate's study explainer for ${subject.name} - ${topic.name}. Help learners understand concepts step by step. Never give direct answers to graded exam questions. Be encouraging and educational.`;
+      const fullMessage = messages.length === 0 
+        ? `${systemPrompt}\n\nUser: ${messageToSend}`
+        : messageToSend;
+      await sendAIMessage(fullMessage);
+    } catch (err) {
+      console.error('Failed to send message:', err);
     }
   };
+  
+  const isLoading = messages.length > 0 && messages[messages.length - 1]?.role === 'user';
   
   if (!subject || !topic) {
     return (
@@ -227,17 +175,17 @@ export default function AITutorPage() {
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
         >
-          {messages.length === 0 && (
+          {messages.filter(m => m.role !== 'system').length === 0 && (
             <View style={styles.welcomeContainer}>
               <MessageCircle size={48} color={colors.primary} />
               <Text style={[styles.welcomeTitle, { color: colors.text }]}>AI Tutor Ready</Text>
               <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
-                Ask me anything about {topic.name}. I'm here to help you understand the concepts step by step.
+                Ask me anything about {topic.name}. I&apos;m here to help you understand the concepts step by step.
               </Text>
             </View>
           )}
           
-          {messages.map((message) => (
+          {messages.filter(m => m.role !== 'system').map((message) => (
             <View key={message.id} style={[
               styles.messageContainer,
               message.role === 'user' ? styles.userMessage : styles.assistantMessage
@@ -248,12 +196,19 @@ export default function AITutorPage() {
                   ? { backgroundColor: colors.primary } 
                   : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }
               ]}>
-                <Text style={[
-                  styles.messageText,
-                  { color: message.role === 'user' ? '#ffffff' : colors.text }
-                ]}>
-                  {message.content}
-                </Text>
+                {message.parts.map((part, i) => {
+                  if (part.type === 'text') {
+                    return (
+                      <Text key={i} style={[
+                        styles.messageText,
+                        { color: message.role === 'user' ? '#ffffff' : colors.text }
+                      ]}>
+                        {part.text}
+                      </Text>
+                    );
+                  }
+                  return null;
+                })}
               </View>
             </View>
           ))}
@@ -279,12 +234,12 @@ export default function AITutorPage() {
             placeholderTextColor={colors.textSecondary}
             multiline
             maxLength={500}
-            onSubmitEditing={sendMessage}
+            onSubmitEditing={handleSendMessage}
             blurOnSubmit={false}
           />
           <TouchableOpacity 
             style={[styles.sendButton, { backgroundColor: inputText.trim() ? colors.primary : colors.border }]}
-            onPress={sendMessage}
+            onPress={handleSendMessage}
             disabled={!inputText.trim() || isLoading}
           >
             <Send size={20} color={inputText.trim() ? '#ffffff' : colors.textSecondary} />
