@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, useWindowDimensions } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Header } from '@/components/Header';
@@ -14,6 +14,7 @@ export default function EmployeeLibrary() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { employees, favoriteCourses, toggleFavorite } = useBusiness();
+  const { width } = useWindowDimensions();
 
   const [selectedCategory, setSelectedCategory] = useState<CourseCategory | 'all'>('all');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -65,9 +66,11 @@ export default function EmployeeLibrary() {
             onPress={() => router.push('/business/certificates' as any)}
           >
             <Award size={18} color={colors.background} />
-            <Text style={[styles.certificatesButtonText, { color: colors.background }]}>
-              My Certificates
-            </Text>
+            {width > 380 && (
+              <Text style={[styles.certificatesButtonText, { color: colors.background }]}>
+                Certificates
+              </Text>
+            )}
           </Pressable>
         </View>
 
@@ -285,13 +288,13 @@ const styles = StyleSheet.create({
   certificatesButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
   },
   certificatesButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600' as const,
   },
   assignedSection: {
