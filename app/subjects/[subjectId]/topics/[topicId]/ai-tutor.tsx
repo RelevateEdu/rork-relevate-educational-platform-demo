@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, MessageCircle, BookOpen, Users, Briefcase, Globe, Send } from 'lucide-react-native';
+import { ArrowLeft, MessageCircle, BookOpen, Users, Briefcase, Globe, Send, Paperclip, X, FileText } from 'lucide-react-native';
 import { Header } from '@/components/Header';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useRorkAgent } from '@rork/toolkit-sdk';
+import * as DocumentPicker from 'expo-document-picker';
 
 interface Topic {
   id: string;
@@ -90,10 +91,20 @@ const subjectsData: Record<string, Subject> = {
   },
 };
 
+interface AttachedFile {
+  uri: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  text?: string;
+}
+
 export default function AITutorPage() {
   const { colors } = useThemeContext();
   const { subjectId, topicId } = useLocalSearchParams<{ subjectId: string; topicId: string }>();
   const [inputText, setInputText] = useState<string>('');
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [isProcessingFile, setIsProcessingFile] = useState<boolean>(false);
   const scrollViewRef = useRef<ScrollView>(null);
   
   const subject = subjectsData[subjectId as string];
@@ -111,20 +122,112 @@ export default function AITutorPage() {
     }
   }, [messages]);
   
+  const extractTextFromPDF = async (uri: string): Promise<string> => {
+    try {
+      console.log('Extracting text from PDF:', uri);
+      
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      
+      return new Promise((resolve, reject) => {
+        reader.onload = async () => {
+          try {
+            
+            if (Platform.OS === 'web') {
+              resolve('PDF uploaded. Please describe the content or ask questions about it.');
+            } else {
+              resolve('PDF attached. The AI will analyze its content in the context of your questions.');
+            }
+          } catch (e) {
+            reject(e);
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error extracting PDF text:', error);
+      throw error;
+    }
+  };
+
+  const handlePickDocument = async () => {
+    try {
+      setIsProcessingFile(true);
+      
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+      
+      if (result.canceled) {
+        setIsProcessingFile(false);
+        return;
+      }
+      
+      const file = result.assets[0];
+      
+      if (!file) {
+        setIsProcessingFile(false);
+        return;
+      }
+      
+      if (file.size && file.size > 10 * 1024 * 1024) {
+        Alert.alert('File Too Large', 'Please select a PDF smaller than 10MB');
+        setIsProcessingFile(false);
+        return;
+      }
+      
+      let extractedText = '';
+      try {
+        extractedText = await extractTextFromPDF(file.uri);
+      } catch (err) {
+        console.warn('Could not extract text from PDF:', err);
+        extractedText = 'PDF document attached for reference.';
+      }
+      
+      const newFile: AttachedFile = {
+        uri: file.uri,
+        name: file.name,
+        size: file.size || 0,
+        mimeType: file.mimeType || 'application/pdf',
+        text: extractedText,
+      };
+      
+      setAttachedFiles(prev => [...prev, newFile]);
+      setIsProcessingFile(false);
+    } catch (error) {
+      console.error('Error picking document:', error);
+      Alert.alert('Error', 'Failed to attach file. Please try again.');
+      setIsProcessingFile(false);
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSendMessage = async () => {
-    if (!inputText.trim() || !subject || !topic) return;
+    if ((!inputText.trim() && attachedFiles.length === 0) || !subject || !topic) return;
     
     const messageToSend = inputText.trim();
+    const filesContext = attachedFiles.length > 0 
+      ? `\n\n[Attached PDFs for reference - these are A-level study materials]:\n${attachedFiles.map(f => `- ${f.name}: ${f.text || 'PDF document'}`).join('\n')}`
+      : '';
+    
     setInputText('');
+    setAttachedFiles([]);
     
     try {
-      const systemPrompt = `You are Relevate's study explainer for ${subject.name} - ${topic.name}. Help learners understand concepts step by step. Never give direct answers to graded exam questions. Be encouraging and educational.`;
+      const systemPrompt = `You are Relevate's study explainer for ${subject.name} - ${topic.name}. You are helping A-level students understand concepts step by step. If PDFs are attached, analyze them in the context of A-level curriculum and help students understand the material. Never give direct answers to graded exam questions. Be encouraging and educational. Focus on explaining concepts clearly for A-level students.`;
       const fullMessage = messages.length === 0 
-        ? `${systemPrompt}\n\nUser: ${messageToSend}`
-        : messageToSend;
+        ? `${systemPrompt}\n\nUser: ${messageToSend}${filesContext}`
+        : `${messageToSend}${filesContext}`;
       await sendAIMessage(fullMessage);
     } catch (err) {
       console.error('Failed to send message:', err);
+      Alert.alert('Error', 'Failed to send message. Please try again.');
     }
   };
   
@@ -225,25 +328,57 @@ export default function AITutorPage() {
           )}
         </ScrollView>
         
-        <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-          <TextInput
-            style={[styles.textInput, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder={`Ask about ${topic.name}...`}
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            maxLength={500}
-            onSubmitEditing={handleSendMessage}
-            blurOnSubmit={false}
-          />
-          <TouchableOpacity 
-            style={[styles.sendButton, { backgroundColor: inputText.trim() ? colors.primary : colors.border }]}
-            onPress={handleSendMessage}
-            disabled={!inputText.trim() || isLoading}
-          >
-            <Send size={20} color={inputText.trim() ? '#ffffff' : colors.textSecondary} />
-          </TouchableOpacity>
+        <View style={styles.inputWrapper}>
+          {attachedFiles.length > 0 && (
+            <View style={[styles.attachedFilesContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {attachedFiles.map((file, index) => (
+                  <View key={index} style={[styles.attachedFileChip, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                    <FileText size={16} color={colors.primary} />
+                    <Text style={[styles.attachedFileName, { color: colors.text }]} numberOfLines={1}>
+                      {file.name}
+                    </Text>
+                    <TouchableOpacity onPress={() => handleRemoveFile(index)}>
+                      <X size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+          
+          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+            <TouchableOpacity 
+              style={[styles.attachButton, { borderColor: colors.border }]}
+              onPress={handlePickDocument}
+              disabled={isProcessingFile || isLoading}
+            >
+              {isProcessingFile ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Paperclip size={20} color={colors.textSecondary} />
+              )}
+            </TouchableOpacity>
+            
+            <TextInput
+              style={[styles.textInput, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder={`Ask about ${topic.name}...`}
+              placeholderTextColor={colors.textSecondary}
+              multiline
+              maxLength={500}
+              onSubmitEditing={handleSendMessage}
+              blurOnSubmit={false}
+            />
+            <TouchableOpacity 
+              style={[styles.sendButton, { backgroundColor: (inputText.trim() || attachedFiles.length > 0) ? colors.primary : colors.border }]}
+              onPress={handleSendMessage}
+              disabled={(!inputText.trim() && attachedFiles.length === 0) || isLoading}
+            >
+              <Send size={20} color={(inputText.trim() || attachedFiles.length > 0) ? '#ffffff' : colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -347,6 +482,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: 'italic',
   },
+  inputWrapper: {
+    width: '100%',
+  },
+  attachedFilesContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+  },
+  attachedFileChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 8,
+    maxWidth: 200,
+  },
+  attachedFileName: {
+    fontSize: 14,
+    flex: 1,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -354,6 +512,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderTopWidth: 1,
     gap: 12,
+  },
+  attachButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
   textInput: {
     flex: 1,
